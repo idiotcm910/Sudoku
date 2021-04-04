@@ -113,11 +113,23 @@ namespace Game
             Random r = new Random();
             for(byte i = 1; i <= Convert.ToByte(mode); ++i)
             {
-                sbyte check;
-                do{
-                    AddValueToResult(Convert.ToByte(r.Next(0, 64)),Convert.ToByte(r.Next(1, 9)), out check);
-                    if(check == 1) break;
-                }while(check != 1);
+                byte index = Convert.ToByte(r.Next(0, n*n));
+                result[index] += 10;
+            }
+
+            for(int i = 0; i < n*n; ++i)
+            {
+                if(result[i] < 10){
+                    byte i_R = Convert.ToByte(i / 9);
+                    byte i_C = Convert.ToByte(i % 9);
+                    byte vitri_Matrix = Convert.ToByte((((i_R / 3)*3) + (i_C / 3))*9);
+
+                    row[i_R*9 + result[i]] = 0;
+                    column[i_C*9 + result[i]] = 0;
+                    matrix_Con[vitri_Matrix + result[i]] = 0;
+                    result[i] = 0;
+                }
+                else result[i] -= 10;
             }
         }
 

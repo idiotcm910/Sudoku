@@ -15,9 +15,12 @@ namespace Game
         private byte[] column;
         private byte[] matrix_Con;
         private byte[] result;
-        private byte checkResult;
         public byte N{get{return n;}}
         private bool flag_Check = false;
+
+        private Random r;
+
+        private int start = 0;
 
         public Sudoku(byte number_Matrix)
         {
@@ -26,39 +29,59 @@ namespace Game
             column = new byte[n*n];
             matrix_Con = new byte[n*n];
             result = new byte[n*n];
+            r = new Random();
         }
 
-        public void test(byte i)
+        public void test(byte i, int stop)
         {
-            if(flag_Check == true) return;
+            if(start == stop){
+                start = 0;
+                return;
+            }
             if(i == n*n){
-                output();
-                flag_Check = true;
+                start += 1;
             }
             else{
                 //output();
-                for(byte index = 1; index <= 9; ++index)
-                {
+                if(result[i] != 0) test(Convert.ToByte(i + 1), stop);
+                else{ 
+                    //output();
                     byte i_R = Convert.ToByte(i / 9);
                     byte i_C = Convert.ToByte(i % 9);
-                    byte value = Convert.ToByte(index - 1);
                     byte vitri_Matrix = Convert.ToByte((((i_R / 3)*3) + (i_C / 3))*9);
-                    if(row[i_R*9 + value] == 0 && column[i_C*9 + value] == 0 && matrix_Con[vitri_Matrix + value] == 0){
-                        result[i] = index;
-                        row[i_R*9 + value] = Convert.ToByte(i + 1);
-                        column[i_C*9 + value] = Convert.ToByte(i + 1);
-                        matrix_Con[vitri_Matrix + value] = Convert.ToByte(i + 1);
+                    byte[] ConditionStop = new byte[9];
+                    byte numberCheck = 0;
 
-                        test(Convert.ToByte(i + 1));
-                        if(flag_Check != true){
-                            row[i_R*9 + value] = 0;
-                            column[i_C*9 + value] = 0;
-                            matrix_Con[vitri_Matrix + value] = 0;
-                        }else{
-                            return;
-                        }                 
+                    while(numberCheck != 9)
+                    {
+                        byte index = Convert.ToByte(r.Next(1, 10));
+    
+                        //condition random
+                        if(ConditionStop[index - 1] == 0){
+                            byte value = Convert.ToByte(index - 1);
+                            if(row[i_R*9 + value] == 0 && column[i_C*9 + value] == 0 && matrix_Con[vitri_Matrix + value] == 0){
+                                result[i] = index;
+                                row[i_R*9 + value] = Convert.ToByte(i + 1);
+                                column[i_C*9 + value] = Convert.ToByte(i + 1);
+                                matrix_Con[vitri_Matrix + value] = Convert.ToByte(i + 1);
+
+                                test(Convert.ToByte(i + 1), stop);
+                                if(start != stop){
+                                    row[i_R*9 + value] = 0;
+                                    column[i_C*9 + value] = 0;
+                                    matrix_Con[vitri_Matrix + value] = 0;
+                                }else{
+                                    return;
+                                }                 
+                            }
+
+                            ConditionStop[index - 1] = 1;
+                            numberCheck += 1;
+                        }
                     }
+                    result[i] = 0;
                 }
+                
             }
         }
 
@@ -86,10 +109,9 @@ namespace Game
         } 
 
         public void RandomStartGame(Mode_Sudoku mode)
-        {
-            checkResult = Convert.ToByte(n - mode);
+        {   
             Random r = new Random();
-            for(byte i = 1; i <=Convert.ToByte(mode); ++i)
+            for(byte i = 1; i <= Convert.ToByte(mode); ++i)
             {
                 sbyte check;
                 do{
@@ -99,22 +121,22 @@ namespace Game
             }
         }
 
-        public void AddValueToResult(byte index_Result, byte Value, out sbyte check)
+        public void AddValueToResult(byte i, byte index, out sbyte check)
         {
-            if((Value > 9 || Value < 1) || (index_Result < 0 || index_Result > n*n)) check = -1;
+            if((index > 9 || index < 1) || (i < 0 || i > n*n)) check = -1;
             else{
-                byte i_R = Convert.ToByte(index_Result / 9);
-                byte i_C = Convert.ToByte(index_Result % 9);
-                byte value_i = Convert.ToByte(Value - 1);
-                byte vitri_Matrix = Convert.ToByte((((i_R / 3)*3) + (i_C / 3))*9);
-                if(row[i_R*9 + value_i] == 0 && column[i_C*9 + value_i] == 0 && matrix_Con[vitri_Matrix + value_i] == 0){
-                    result[index_Result] = Value;
-                    row[i_R*9 + value_i] = Convert.ToByte(index_Result + 1);
-                    column[i_C*9 + value_i] = Convert.ToByte(index_Result + 1);
-                    matrix_Con[vitri_Matrix + value_i] = Convert.ToByte(index_Result + 1);
-                    check = 1;
-                }
-                else check = 0;
+                    byte i_R = Convert.ToByte(i / 9);
+                    byte i_C = Convert.ToByte(i % 9);
+                    byte value = Convert.ToByte(index - 1);
+                    byte vitri_Matrix = Convert.ToByte((((i_R / 3)*3) + (i_C / 3))*9);
+                    if(row[i_R*9 + value] == 0 && column[i_C*9 + value] == 0 && matrix_Con[vitri_Matrix + value] == 0){
+                        result[i] = index;
+                        row[i_R*9 + value] = Convert.ToByte(i + 1);
+                        column[i_C*9 + value] = Convert.ToByte(i + 1);
+                        matrix_Con[vitri_Matrix + value] = Convert.ToByte(i + 1);
+                        check = 1;
+                    }
+                    else check = 0;
             }
         }
     }
@@ -122,11 +144,50 @@ namespace Game
     public class Display_Sodoku
     {
         private Sudoku GameOn;
+        private Mode_Sudoku mode;
         public Display_Sodoku()
         {
-            GameOn = new Sudoku(9);
+            ScreenMode();
+            ScreenPlay();
+        }
 
-            GameOn.output();
+            
+        // man choi chon che do
+        private void ScreenMode()
+        {
+            byte chosen;
+            do{
+                System.Console.WriteLine("Nhap lua chon: ");
+                System.Console.WriteLine("1. Easy \n2. Medium \n3. Hard");
+                Console.WriteLine("================================================");
+                Console.Write("Nhap lua chon: "); chosen = Convert.ToByte(Console.ReadLine());
+                if(chosen < 1 || chosen > 3){
+                    Console.WriteLine("Ban nhap sai lua chon!");
+                    Console.WriteLine("Nhan bat ky nut de tiep tuc!");
+                    Console.ReadLine();
+                    Console.Clear();
+                }
+            }while(chosen < 1 || chosen > 3);
+
+            switch(chosen){
+                case 1:
+                    mode = Mode_Sudoku.easy;
+                    break;
+                case 2:
+                    mode = Mode_Sudoku.medium;
+                    break;
+                case 3:
+                    mode = Mode_Sudoku.hard;
+                    break;
+            }
+            
+            Console.Clear();
+        }
+
+        //bat dau choi
+        private void ScreenPlay()
+        {
+            GameOn = new Sudoku(9);
 
             Console.WriteLine("1.Choi Game \n2.Giai");
             byte answer;
@@ -138,30 +199,47 @@ namespace Game
                     Console.WriteLine("Ban lua chon sai, vui long chon lai!");
             }while(answer > 2 || answer < 1);
 
+            Console.Clear();
+            GameOn.RandomStartGame(mode);
+            GameOn.output();
+
             switch(answer)
             {
                 case 1:
-                    GameOn.RandomStartGame(Mode_Sudoku.easy);
-                    GameOn.output();
+                    ScreenPlay_ChosenOne();
                     break;
                 case 2:
-                    GameOn.test(0);
+                    GameOn.test(0, 1);
                     GameOn.output();
                     break;
             }
         }
 
-        private void Chosen_One()
-        {
-            Console.Clear();
-            GameOn.RandomStartGame(Mode_Sudoku.easy);
-            GameOn.output();
 
-            for(byte index = 0; index < GameOn.N*GameOn.N; ++index)
+
+        private void ScreenPlay_ChosenOne()
+        {
+            int count = GameOn.N - Convert.ToInt32(mode);
+            while(count != 0)
             {
-                byte c1, c2;
-                Console.Write("Nhap vi tri: "); c1 = Convert.ToByte(Console.ReadLine());
-                Console.Write("Gia tri: "); c2 = Convert.ToByte(Console.ReadLine());
+                sbyte check;
+                do{
+                    byte vitri, value;
+                    Console.Write("Nhap vi tri: "); vitri = Convert.ToByte(Console.ReadLine());
+                    Console.Write("So tai vi tri do: "); value = Convert.ToByte(Console.ReadLine());
+                    GameOn.AddValueToResult(vitri, value, out check);
+                    if(check == 1) break;
+                    else{
+                        if(check == -1) Console.WriteLine("Ban nhap khong dung vi tri hoac so tai vi tri do!");
+                        else Console.WriteLine("so tai vi tri ban nhap khong dung!");
+                        Console.WriteLine("Nhan bat ky nut de tiep tuc!");
+                        Console.ReadLine();
+                        Console.Clear();
+                    }
+
+                }while(check != 1);
+
+                count -= 1;
             }
         }
     }
